@@ -170,6 +170,43 @@
     .report-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
     .btn-secondary { background: var(--bg-3); border: 1px solid var(--bg-4); border-radius: 8px; padding: 14px; width: 100%; color: var(--text-1); font-size: 15px; font-weight: 600; cursor: pointer; }
     
+    /* 交易弹窗 */
+    .trade-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .trade-modal.show { display: flex; }
+    .trade-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+    .trade-card { position: relative; z-index: 1; background: var(--bg-2); border: 1px solid var(--bg-4); border-radius: 20px 20px 0 0; padding: 24px 20px; width: 100%; max-width: 500px; }
+    .trade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .trade-title { font-size: 18px; font-weight: 700; }
+    .trade-title.buy { color: var(--up); }
+    .trade-title.sell { color: var(--down); }
+    .trade-close { background: none; border: none; color: var(--text-3); font-size: 24px; cursor: pointer; padding: 0 8px; }
+    .trade-price-section { background: var(--bg-3); border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center; }
+    .trade-price-label { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
+    .trade-price-value { font-size: 28px; font-weight: 800; }
+    .trade-price-value.up { color: var(--up); }
+    .trade-price-value.down { color: var(--down); }
+    .trade-info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+    .trade-info-row .label { color: var(--text-3); }
+    .trade-info-row .value { color: var(--text-1); font-weight: 500; }
+    .qty-section { margin-bottom: 20px; }
+    .qty-label { font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
+    .qty-input-row { display: flex; gap: 10px; align-items: center; }
+    .qty-input { flex: 1; background: var(--bg-3); border: 1px solid var(--bg-4); border-radius: 10px; padding: 14px; color: var(--text-1); font-size: 20px; font-weight: 600; text-align: center; }
+    .qty-btn { background: var(--bg-3); border: 1px solid var(--bg-4); border-radius: 8px; padding: 12px 16px; color: var(--text-1); font-size: 13px; cursor: pointer; }
+    .qty-btn:active { background: var(--bg-4); }
+    .trade-summary { background: var(--bg-3); border-radius: 12px; padding: 14px; margin-bottom: 20px; }
+    .trade-summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+    .trade-summary-row .label { color: var(--text-3); }
+    .trade-summary-row .value { color: var(--text-1); }
+    .trade-submit { width: 100%; border: none; border-radius: 12px; padding: 16px; font-size: 18px; font-weight: 700; cursor: pointer; }
+    .trade-submit.buy { background: var(--up); color: #fff; }
+    .trade-submit.sell { background: var(--down); color: #fff; }
+    .trade-submit:active { opacity: 0.9; }
+    .trade-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .trade-info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--bg-4); }
+    .trade-info-row .label { color: var(--text-3); }
+    .trade-info-row .value { color: var(--text-1); font-weight: 500; }
+    
     /* 资金选择弹窗 */
     .capital-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; }
     .capital-modal.show { display: flex; }
@@ -247,21 +284,9 @@
     </div>
     
     <div class="trade-section">
-      <div class="trade-input-row">
-        <input type="number" class="trade-input" id="trade-shares" value="100" step="100" min="100">
-        <div class="qty-btns">
-          <button class="qty-btn" onclick="setQty(100)">1手</button>
-          <button class="qty-btn" onclick="setQty(500)">5手</button>
-          <button class="qty-btn" onclick="setQty(1000)">10手</button>
-        </div>
-      </div>
       <div class="trade-btns">
-        <button class="btn-buy" onclick="buy()">买入</button>
-        <button class="btn-sell" onclick="sell()">卖出</button>
-      </div>
-      <div class="quick-btns">
-        <button class="btn-quick" onclick="buyMax()">全仓买</button>
-        <button class="btn-quick" onclick="sellAll()">清仓卖</button>
+        <button class="btn-buy" onclick="showBuyModal()">买入</button>
+        <button class="btn-sell" onclick="showSellModal()">卖出</button>
       </div>
     </div>
     
@@ -315,6 +340,106 @@
       <button class="btn-secondary" onclick="backToMenu()">返回菜单</button>
     </div>
     <div class="safe-bottom"></div>
+  </div>
+  
+  <!-- 买入弹窗 -->
+  <div id="buy-modal" class="trade-modal">
+    <div class="trade-overlay" onclick="closeTradeModal('buy')"></div>
+    <div class="trade-card safe-bottom">
+      <div class="trade-header">
+        <div class="trade-title buy">📈 买入</div>
+        <button class="trade-close" onclick="closeTradeModal('buy')">×</button>
+      </div>
+      <div class="trade-price-section">
+        <div class="trade-price-label">当前价格</div>
+        <div class="trade-price-value up" id="buy-price">¥250.00</div>
+      </div>
+      <div class="trade-info-row">
+        <span class="label">可用资金</span>
+        <span class="value" id="buy-cash">¥100,000</span>
+      </div>
+      <div class="qty-section">
+        <div class="qty-label">买入数量（100股起）</div>
+        <div class="qty-input-row">
+          <button class="qty-btn" onclick="adjustQty('buy', -100)">-</button>
+          <input type="number" class="qty-input" id="buy-shares" value="100" step="100" min="100" oninput="updateTradeSummary('buy')">
+          <button class="qty-btn" onclick="adjustQty('buy', 100)">+</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('buy', 100)">1手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('buy', 500)">5手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('buy', 1000)">10手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQtyMax('buy')">全仓</button>
+        </div>
+      </div>
+      <div class="trade-summary">
+        <div class="trade-summary-row">
+          <span class="label">预估金额</span>
+          <span class="value" id="buy-amount">¥25,000</span>
+        </div>
+        <div class="trade-summary-row">
+          <span class="label">手续费</span>
+          <span class="value" id="buy-fee">¥7.50</span>
+        </div>
+        <div class="trade-summary-row" style="border-top:1px solid var(--bg-4);padding-top:10px;margin-top:6px;">
+          <span class="label">合计</span>
+          <span class="value" id="buy-total" style="font-weight:700;color:var(--up);">¥25,007.50</span>
+        </div>
+      </div>
+      <button class="trade-submit buy" id="buy-submit" onclick="executeBuy()">确认买入</button>
+    </div>
+  </div>
+  
+  <!-- 卖出弹窗 -->
+  <div id="sell-modal" class="trade-modal">
+    <div class="trade-overlay" onclick="closeTradeModal('sell')"></div>
+    <div class="trade-card safe-bottom">
+      <div class="trade-header">
+        <div class="trade-title sell">📉 卖出</div>
+        <button class="trade-close" onclick="closeTradeModal('sell')">×</button>
+      </div>
+      <div class="trade-price-section">
+        <div class="trade-price-label">当前价格</div>
+        <div class="trade-price-value down" id="sell-price">¥250.00</div>
+      </div>
+      <div class="trade-info-row">
+        <span class="label">持仓数量</span>
+        <span class="value" id="sell-holding">0股</span>
+      </div>
+      <div class="trade-info-row">
+        <span class="label">持仓成本</span>
+        <span class="value" id="sell-cost">--</span>
+      </div>
+      <div class="qty-section">
+        <div class="qty-label">卖出数量（100股起）</div>
+        <div class="qty-input-row">
+          <button class="qty-btn" onclick="adjustQty('sell', -100)">-</button>
+          <input type="number" class="qty-input" id="sell-shares" value="100" step="100" min="100" oninput="updateTradeSummary('sell')">
+          <button class="qty-btn" onclick="adjustQty('sell', 100)">+</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('sell', 100)">1手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('sell', 500)">5手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQty('sell', 1000)">10手</button>
+          <button class="qty-btn" style="flex:1" onclick="setTradeQtyMax('sell')">清仓</button>
+        </div>
+      </div>
+      <div class="trade-summary">
+        <div class="trade-summary-row">
+          <span class="label">预估金额</span>
+          <span class="value" id="sell-amount">¥25,000</span>
+        </div>
+        <div class="trade-summary-row">
+          <span class="label">手续费</span>
+          <span class="value" id="sell-fee">¥32.50</span>
+        </div>
+        <div class="trade-summary-row" style="border-top:1px solid var(--bg-4);padding-top:10px;margin-top:6px;">
+          <span class="label">预估盈亏</span>
+          <span class="value" id="sell-profit" style="color:var(--up);">+¥1,000</span>
+        </div>
+      </div>
+      <button class="trade-submit sell" id="sell-submit" onclick="executeSell()">确认卖出</button>
+    </div>
   </div>
   
   <script>
@@ -854,42 +979,128 @@
       macdCtx.fillText('MACD', 4, 10);
     }
     
-    function buy() {
-      const qty = parseInt(document.getElementById('trade-shares').value) || 100;
+    // ===== 交易弹窗 =====
+    function showBuyModal() {
+      if (dayIndex === 0) { showToast('请先点击「下一天」', 'error'); return; }
+      const price = getCurrentPrice();
+      document.getElementById('buy-price').textContent = '¥' + price.toFixed(2);
+      document.getElementById('buy-cash').textContent = '¥' + cash.toFixed(0);
+      const maxQty = Math.floor(cash / (price * 1.001));
+      document.getElementById('buy-max-qty').textContent = Math.floor(maxQty / 100) * 100 + '股';
+      document.getElementById('buy-shares').value = 100;
+      updateTradeSummary('buy');
+      document.getElementById('buy-modal').classList.add('show');
+    }
+    
+    function showSellModal() {
+      if (dayIndex === 0) { showToast('请先点击「下一天」', 'error'); return; }
+      const price = getCurrentPrice();
+      document.getElementById('sell-price').textContent = '¥' + price.toFixed(2);
+      document.getElementById('sell-holding').textContent = shares + '股';
+      document.getElementById('sell-cost').textContent = shares > 0 ? '¥' + avgCost.toFixed(2) : '--';
+      document.getElementById('sell-shares').value = Math.min(100, shares);
+      updateTradeSummary('sell');
+      document.getElementById('sell-modal').classList.add('show');
+    }
+    
+    function closeTradeModal(type) {
+      document.getElementById(type + '-modal').classList.remove('show');
+    }
+    
+    function adjustQty(type, delta) {
+      const input = document.getElementById(type + '-shares');
+      let val = parseInt(input.value) || 100;
+      val = Math.max(100, val + delta);
+      input.value = val;
+      updateTradeSummary(type);
+    }
+    
+    function setTradeQty(type, qty) {
+      document.getElementById(type + '-shares').value = qty;
+      updateTradeSummary(type);
+    }
+    
+    function setTradeQtyMax(type) {
+      const price = getCurrentPrice();
+      if (type === 'buy') {
+        const maxQty = Math.floor(cash / (price * 1.001));
+        const qty = maxQty - (maxQty % 100);
+        document.getElementById('buy-shares').value = Math.max(100, qty);
+      } else {
+        document.getElementById('sell-shares').value = shares;
+      }
+      updateTradeSummary(type);
+    }
+    
+    function updateTradeSummary(type) {
+      const price = getCurrentPrice();
+      const qty = parseInt(document.getElementById(type + '-shares').value) || 100;
+      
+      if (type === 'buy') {
+        const amount = price * qty;
+        const fee = Math.max(5, amount * 0.0003);
+        const total = amount + fee;
+        const canBuy = total <= cash;
+        
+        document.getElementById('buy-amount').textContent = '¥' + amount.toFixed(0);
+        document.getElementById('buy-fee').textContent = '¥' + fee.toFixed(2);
+        document.getElementById('buy-total').textContent = '¥' + total.toFixed(0);
+        document.getElementById('buy-submit').disabled = !canBuy || qty < 100;
+      } else {
+        const amount = price * qty;
+        const commission = Math.max(5, amount * 0.0003);
+        const tax = amount * 0.001;
+        const fee = commission + tax;
+        const revenue = amount - fee;
+        const profit = shares > 0 ? (price - avgCost) * qty - fee : 0;
+        
+        document.getElementById('sell-amount').textContent = '¥' + amount.toFixed(0);
+        document.getElementById('sell-fee').textContent = '¥' + fee.toFixed(2);
+        const profitEl = document.getElementById('sell-profit');
+        profitEl.textContent = (profit >= 0 ? '+' : '') + '¥' + profit.toFixed(0);
+        profitEl.style.color = profit >= 0 ? 'var(--up)' : 'var(--down)';
+        document.getElementById('sell-submit').disabled = qty > shares || qty < 100;
+      }
+    }
+    
+    function executeBuy() {
+      const qty = parseInt(document.getElementById('buy-shares').value) || 100;
       const price = getCurrentPrice();
       const cost = price * qty + Math.max(5, price * qty * 0.0003);
+      
       if (cost > cash) { showToast('❌ 资金不足', 'error'); return; }
       if (qty < 100) { showToast('❌ 最少买入100股', 'error'); return; }
+      
       cash -= cost;
       avgCost = (avgCost * shares + price * qty) / (shares + qty);
-      shares += qty; tradeCount++;
+      shares += qty;
+      tradeCount++;
+      
+      closeTradeModal('buy');
       showToast(`✅ 买入 ${qty}股 @ ¥${price.toFixed(2)}`, 'success');
       updateUI();
     }
     
-    function sell() {
-      const qty = parseInt(document.getElementById('trade-shares').value) || 100;
+    function executeSell() {
+      const qty = parseInt(document.getElementById('sell-shares').value) || 100;
       const price = getCurrentPrice();
+      
       if (qty > shares) { showToast('❌ 持仓不足', 'error'); return; }
       if (qty < 100) { showToast('❌ 最少卖出100股', 'error'); return; }
+      
       const revenue = price * qty - Math.max(5, price * qty * 0.0003) - price * qty * 0.001;
       const pnl = revenue - avgCost * qty;
-      cash += revenue; shares -= qty;
+      
+      cash += revenue;
+      shares -= qty;
       if (shares === 0) avgCost = 0;
-      tradeCount++; if (pnl >= 0) winCount++;
+      tradeCount++;
+      if (pnl >= 0) winCount++;
+      
+      closeTradeModal('sell');
       showToast(pnl >= 0 ? `✅ 盈利 +¥${pnl.toFixed(0)}` : `📉 亏损 -¥${Math.abs(pnl).toFixed(0)}`, pnl >= 0 ? 'success' : 'error');
       updateUI();
     }
-    
-    function buyMax() {
-      const price = getCurrentPrice();
-      const maxQty = Math.floor(cash / (price * 1.001));
-      const qty = maxQty - (maxQty % 100);
-      if (qty >= 100) { document.getElementById('trade-shares').value = qty; buy(); }
-    }
-    
-    function sellAll() { if (shares >= 100) { document.getElementById('trade-shares').value = shares; sell(); } }
-    function setQty(qty) { document.getElementById('trade-shares').value = qty; }
     
     function nextDay() {
       const level = LEVELS[currentLevel];
