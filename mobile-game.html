@@ -279,7 +279,7 @@
     <div class="modal-content">
       <div class="modal-title" id="modal-title">📚 教学</div>
       <div class="modal-body" id="modal-body"></div>
-      <button class="btn-primary" onclick="closeModal()">我知道了</button>
+      <button class="btn-primary" id="teaching-btn" onclick="closeModal()">我知道了</button>
     </div>
   </div>
   
@@ -965,16 +965,20 @@
         document.getElementById('modal-body').innerHTML = lesson.content;
         
         // 更新按钮
-        const btnText = currentLessonIdx >= lessons.length - 1 ? '开始测验 ▶' : '下一页 ▶';
-        document.getElementById('teaching-modal').querySelector('.btn-primary').textContent = btnText;
-        document.getElementById('teaching-modal').querySelector('.btn-primary').onclick = () => {
-          currentLessonIdx++;
-          if (currentLessonIdx >= lessons.length) {
+        const btn = document.getElementById('teaching-btn');
+        if (currentLessonIdx >= lessons.length - 1) {
+          btn.textContent = '开始测验 ▶';
+          btn.onclick = () => {
+            currentLessonIdx++;
             startQuiz();
-          } else {
+          };
+        } else {
+          btn.textContent = '下一页 ▶';
+          btn.onclick = () => {
+            currentLessonIdx++;
             showLessonStep();
-          }
-        };
+          };
+        }
         
         document.getElementById('teaching-modal').classList.add('show');
       } else {
@@ -986,7 +990,7 @@
       const level = LEVELS[currentLevel];
       const quiz = level.quiz || [];
       
-      if (currentQuizIdx < quiz.length) {
+      if (quiz.length > 0 && currentQuizIdx < quiz.length) {
         showQuizStep();
       } else {
         finishTeaching();
@@ -1003,7 +1007,7 @@
       const progress = `📝 小测验 ${currentQuizIdx + 1}/${quiz.length}`;
       
       let optionsHtml = q.options.map((opt, i) => 
-        `<button class="quiz-option" onclick="checkAnswer(${i})" style="display:block;width:100%;background:var(--bg-3);border:1px solid var(--bg-4);border-radius:8px;padding:12px;margin:8px 0;text-align:left;color:var(--text-1);cursor:pointer;">
+        `<button class="quiz-option" data-idx="${i}" style="display:block;width:100%;background:var(--bg-3);border:1px solid var(--bg-4);border-radius:8px;padding:12px;margin:8px 0;text-align:left;color:var(--text-1);cursor:pointer;">
           <span style="display:inline-block;width:24px;height:24px;background:var(--accent);border-radius:50%;text-align:center;line-height:24px;margin-right:10px;font-weight:600;color:#000;">${'ABC'[i]}</span>
           ${opt}
         </button>`
@@ -1015,6 +1019,14 @@
         <div id="quiz-options">${optionsHtml}</div>
         <div id="quiz-result" style="margin-top:16px;"></div>
       `;
+      
+      // 隐藏底部按钮（测验时用选项按钮）
+      document.getElementById('teaching-btn').style.display = 'none';
+      
+      // 绑定选项点击事件
+      document.querySelectorAll('.quiz-option').forEach(btn => {
+        btn.addEventListener('click', () => checkAnswer(parseInt(btn.dataset.idx)));
+      });
       
       document.getElementById('teaching-modal').classList.add('show');
     }
@@ -1045,10 +1057,12 @@
           <div style="font-weight:600;margin-bottom:8px;">${correct ? '✅ 回答正确！' : '❌ 回答错误'}</div>
           <div style="font-size:13px;color:var(--text-2);">${q.explanation}</div>
         </div>
-        <button class="btn-primary" style="margin-top:16px;" onclick="nextQuiz()">
+        <button id="quiz-next-btn" class="btn-primary" style="margin-top:16px;">
           ${currentQuizIdx < quiz.length - 1 ? '下一题 ▶' : '开始实战 🚀'}
         </button>
       `;
+      
+      document.getElementById('quiz-next-btn').addEventListener('click', nextQuiz);
     }
     
     function nextQuiz() {
@@ -1065,6 +1079,7 @@
     
     function finishTeaching() {
       document.getElementById('teaching-modal').classList.remove('show');
+      document.getElementById('teaching-btn').style.display = 'block';
       teachingComplete = true;
       showToast('📖 教学完成，开始交易！', 'success');
     }
