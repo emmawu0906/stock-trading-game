@@ -787,11 +787,12 @@
     
     function drawCharts() {
       const level = LEVELS[currentLevel];
-      // 历史数据25条 + 交易日(dayIndex从0开始，0表示只显示历史)
+      // 历史数据25条 + 已过去的交易日
       const historyCount = 25;
+      // dayIndex=0时显示历史25条，dayIndex=1时显示历史25条+第1个交易日
       const visibleCount = Math.min(priceHistory.length, historyCount + dayIndex);
-      const startIdx = priceHistory.length - visibleCount;
-      const data = priceHistory.slice(startIdx);
+      // 从开头开始取
+      const data = priceHistory.slice(0, visibleCount);
       
       const pad = { left: 4, right: 50, top: 24, bottom: 8 };
       const cw = klineW - pad.left - pad.right;
@@ -801,13 +802,12 @@
       const step = candleW + gap;
       const toX = (i) => pad.left + gap / 2 + i * step;
       
-      // 价格范围
+      // 价格范围（基于所有可见数据）
       const prices = data.flatMap(d => [d.high, d.low]);
       data.forEach((d, i) => {
-        const idx = startIdx + i;
-        if (indicators.ma5[idx]) prices.push(indicators.ma5[idx]);
-        if (indicators.ma10[idx]) prices.push(indicators.ma10[idx]);
-        if (indicators.ma20[idx]) prices.push(indicators.ma20[idx]);
+        if (indicators.ma5[i]) prices.push(indicators.ma5[i]);
+        if (indicators.ma10[i]) prices.push(indicators.ma10[i]);
+        if (indicators.ma20[i]) prices.push(indicators.ma20[i]);
       });
       const minP = Math.min(...prices) * 0.998;
       const maxP = Math.max(...prices) * 1.002;
@@ -867,7 +867,7 @@
         klineCtx.beginPath(); klineCtx.strokeStyle = ma.color; klineCtx.lineWidth = 1;
         let started = false;
         for (let i = 0; i < data.length; i++) {
-          const v = indicators[ma.key][startIdx + i];
+          const v = indicators[ma.key][i];
           if (v == null) continue;
           const px = toX(i) + candleW / 2, py = toY(v);
           if (!started) { klineCtx.moveTo(px, py); started = true; }
@@ -877,7 +877,7 @@
         
         // 图例
         klineCtx.fillStyle = ma.color; klineCtx.font = '9px monospace'; klineCtx.textAlign = 'left';
-        const lastV = indicators[ma.key][startIdx + data.length - 1];
+        const lastV = indicators[ma.key][data.length - 1];
         klineCtx.fillText(`${ma.label}:${lastV ? lastV.toFixed(2) : '--'}`, lx, 12);
         lx += 70;
       });
@@ -913,7 +913,7 @@
         volCtx.beginPath(); volCtx.strokeStyle = '#eab308'; volCtx.lineWidth = 1;
         let started = false;
         for (let i = 0; i < data.length; i++) {
-          const v = indicators.volMa5[startIdx + i];
+          const v = indicators.volMa5[i];
           if (v == null) continue;
           const px = toX(i) + candleW / 2;
           const py = volH - vPad.bottom - (v / maxVol) * vArea;
@@ -930,7 +930,7 @@
       
       const mPad = { left: pad.left, right: pad.right, top: 4, bottom: 2 };
       const midY = macdH / 2;
-      const macdVals = data.map((d, i) => indicators.macd[startIdx + i]).filter(v => v != null);
+      const macdVals = data.map((d, i) => indicators.macd[i]).filter(v => v != null);
       const maxM = Math.max(...macdVals.map(Math.abs), 0.01) * 1.1;
       const scaleM = (macdH - mPad.top - mPad.bottom) / 2;
       
@@ -940,7 +940,7 @@
       
       // MACD柱
       data.forEach((d, i) => {
-        const v = indicators.macd[startIdx + i];
+        const v = indicators.macd[i];
         if (v == null) return;
         const x = toX(i);
         const barH = Math.abs(v / maxM) * scaleM;
@@ -953,7 +953,7 @@
       macdCtx.beginPath(); macdCtx.strokeStyle = '#3b82f6'; macdCtx.lineWidth = 1;
       let started = false;
       for (let i = 0; i < data.length; i++) {
-        const v = indicators.dif[startIdx + i];
+        const v = indicators.dif[i];
         if (v == null) continue;
         const px = toX(i) + candleW / 2;
         const py = midY - (v / maxM) * scaleM;
@@ -965,7 +965,7 @@
       macdCtx.beginPath(); macdCtx.strokeStyle = '#eab308'; macdCtx.lineWidth = 1;
       started = false;
       for (let i = 0; i < data.length; i++) {
-        const v = indicators.dea[startIdx + i];
+        const v = indicators.dea[i];
         if (v == null) continue;
         const px = toX(i) + candleW / 2;
         const py = midY - (v / maxM) * scaleM;
