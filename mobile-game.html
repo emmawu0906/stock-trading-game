@@ -331,12 +331,63 @@
     let klineW, klineH, volW, volH, macdW, macdH;
     
     const LEVELS = [
-      { id: 1, title: '认识市场基础', subtitle: '学习K线图的语言', days: 5, profit: 0.05, price: 250, cash: 100000, features: [] },
-      { id: 2, title: '成交量分析', subtitle: '市场的"心跳"', days: 8, profit: 0.08, price: 240, cash: 100000, features: ['volume'] },
-      { id: 3, title: '均线系统', subtitle: '5日、10日、20日线', days: 10, profit: 0.10, price: 230, cash: 100000, features: ['ma5', 'ma10', 'ma20'] },
-      { id: 4, title: '支撑与压力', subtitle: '地板与天花板', days: 12, profit: 0.12, price: 225, cash: 120000, features: ['ma30'] },
-      { id: 5, title: '实战交易系统', subtitle: '综合运用', days: 15, profit: 0.15, price: 220, cash: 150000, features: ['macd'] },
+      { 
+        id: 1, title: '认识市场基础', subtitle: '学习K线图的语言', days: 5, profit: 0.05, price: 250, features: [],
+        lessons: [
+          { title: '📚 股票是什么？', content: '<p>买股票就是成为公司的<b>"股东"</b></p><p>德明利(001309)是<span class="hl">存储芯片</span>龙头企业</p><div class="teach-box"><p>✅ <b>重点：</b></p><ul><li>股价 = 市场对公司价值的看法</li><li>目标：低买高卖</li></ul></div>' },
+          { title: '📊 K线图基础', content: '<p><b>红色阳线</b> = 收盘 > 开盘 = 上涨</p><p><b>绿色阴线</b> = 收盘 < 开盘 = 下跌</p><div class="teach-box"><p>📈 <b>实体</b>：开盘到收盘的波动</p><p>📍 <b>影线</b>：盘中波动范围</p></div>' }
+        ],
+        quiz: [
+          { question: '德明利今天开盘250元，收盘255元，这根K线是什么颜色？', options: ['红色阳线', '绿色阴线', '十字星'], answer: 0, explanation: '因为收盘价 255元 > 开盘价 250元，股价上涨，所以是红色阳线。' },
+          { question: '影线很长的K线说明什么？', options: ['盘中波动很大', '成交量很大', '没有任何意义'], answer: 0, explanation: '长影线意味着盘中价格波动了很多，说明多空力量在争夺。' }
+        ]
+      },
+      { 
+        id: 2, title: '成交量分析', subtitle: '市场的"心跳"', days: 8, profit: 0.08, price: 240, features: ['volume'],
+        lessons: [
+          { title: '🫀 成交量是市场的"心跳"', content: '<p><b>成交量</b> = 股票换手的数量，反映市场活跃程度</p><div class="teach-box"><p>💡 <b>关键：</b></p><ul><li>量越大 = 关注度越高</li><li>量放大 = 资金在进场或出场</li></ul></div>' },
+          { title: '📊 量价关系4种模式', content: '<div class="teach-box"><p>🔥 <b>量增价涨</b> = 健康，可跟进</p><p>💀 <b>量增价跌</b> = 危险，考虑卖出</p><p>⚠️ <b>量缩价涨</b> = 警惕，不追高</p><p>🤔 <b>量缩价跌</b> = 观望，等方向</p></div>' }
+        ],
+        quiz: [
+          { question: '今天放量上涨3%，说明什么？', options: ['资金积极买入', '上涨即将结束', '没有意义'], answer: 0, explanation: '放量上涨是最健康的上涨模式，说明有真金白银推动。' },
+          { question: '股价下跌但成交量放大，应该？', options: ['抄底买入', '观望不动', '考虑卖出'], answer: 2, explanation: '量增价跌说明资金在出逃，是危险信号，应考虑卖出。' }
+        ]
+      },
+      { 
+        id: 3, title: '均线系统', subtitle: '5日、10日、20日线', days: 10, profit: 0.10, price: 230, features: ['ma5', 'ma10', 'ma20'],
+        lessons: [
+          { title: '📏 均线是"平均成本"', content: '<p><b>均线(MA)</b> = 过去N天收盘价的平均值</p><div class="teach-box"><p>🟡 <b>MA5</b> = 最近5天买入者平均成本</p><p>🔵 <b>MA10</b> = 最近10天买入者平均成本</p><p>🩷 <b>MA20</b> = 最近20天买入者平均成本</p></div>' },
+          { title: '📈 多空排列', content: '<div class="teach-box"><p>✅ <b>多头排列</b>：股价>MA5>MA10>MA20，上涨趋势</p><p>🛑 <b>空头排列</b>：股价<MA5<MA10<MA20，下跌趋势</p></div>' }
+        ],
+        quiz: [
+          { question: 'MA5>MA10>MA20说明什么？', options: ['多头排列，趋势向上', '空头排列，趋势向下', '没有意义'], answer: 0, explanation: '短期成本>中期成本>长期成本，说明市场处于上涨趋势。' }
+        ]
+      },
+      { 
+        id: 4, title: '支撑与压力', subtitle: '地板与天花板', days: 12, profit: 0.12, price: 225, features: ['ma30'],
+        lessons: [
+          { title: '🏗️ 支撑与压力位', content: '<p><b>支撑位</b> = 股价难以跌破的价位，像"地板"</p><p><b>压力位</b> = 股价难以突破的价位，像"天花板"</p><div class="teach-box"><p>💡 支撑位附近买入，风险小</p><p>💡 压力位附近卖出，或等突破</p></div>' }
+        ],
+        quiz: [
+          { question: '股价放量突破压力位，应该？', options: ['可以跟进买入', '立即卖出', '没有参考意义'], answer: 0, explanation: '放量突破压力位说明多方力量强大，可以考虑买入。' }
+        ]
+      },
+      { 
+        id: 5, title: '实战交易系统', subtitle: '综合运用', days: 15, profit: 0.15, price: 220, features: ['macd'],
+        lessons: [
+          { title: '🔧 交易系统6步骤', content: '<div class="teach-box"><p>1️⃣ 分析趋势 → 2️⃣ 找入场点 → 3️⃣ 定仓位</p><p>4️⃣ 设止损 → 5️⃣ 定止盈 → 6️⃣ 执行复盘</p></div><p>⚠️ <b>纪律是盈利的关键！</b></p>' },
+          { title: '📊 MACD指标', content: '<p><b>MACD</b> = 趋势跟踪指标</p><div class="teach-box"><p>✨ <b>金叉</b>：DIF上穿DEA，买入信号</p><p>❌ <b>死叉</b>：DIF下穿DEA，卖出信号</p></div>' }
+        ],
+        quiz: [
+          { question: 'MACD金叉+放量，最佳操作？', options: ['分批买入', '全仓卖出', '继续观望'], answer: 0, explanation: 'MACD金叉+放量是双重确认的买入信号，分批买入可控制风险。' }
+        ]
+      }
     ];
+    
+    // 教学系统状态
+    let currentLessonIdx = 0;
+    let currentQuizIdx = 0;
+    let teachingComplete = false;
     
     function init() {
       loadProgress();
@@ -429,7 +480,9 @@
       calculateIndicators();
       
       updateUI();
-      if (levelIndex === 0) setTimeout(() => showLesson(0), 500);
+      
+      // 启动教学
+      setTimeout(() => startTeaching(levelIndex), 500);
     }
     
     function initCharts() {
@@ -891,6 +944,130 @@
     }
     
     function closeModal() { document.getElementById('teaching-modal').classList.remove('show'); }
+    
+    // ===== 教学系统 =====
+    function startTeaching(levelIndex) {
+      currentLessonIdx = 0;
+      currentQuizIdx = 0;
+      teachingComplete = false;
+      showLessonStep();
+    }
+    
+    function showLessonStep() {
+      const level = LEVELS[currentLevel];
+      const lessons = level.lessons || [];
+      
+      if (currentLessonIdx < lessons.length) {
+        const lesson = lessons[currentLessonIdx];
+        const progress = `知识讲解 ${currentLessonIdx + 1}/${lessons.length}`;
+        
+        document.getElementById('modal-title').textContent = lesson.title;
+        document.getElementById('modal-body').innerHTML = lesson.content;
+        
+        // 更新按钮
+        const btnText = currentLessonIdx >= lessons.length - 1 ? '开始测验 ▶' : '下一页 ▶';
+        document.getElementById('teaching-modal').querySelector('.btn-primary').textContent = btnText;
+        document.getElementById('teaching-modal').querySelector('.btn-primary').onclick = () => {
+          currentLessonIdx++;
+          if (currentLessonIdx >= lessons.length) {
+            startQuiz();
+          } else {
+            showLessonStep();
+          }
+        };
+        
+        document.getElementById('teaching-modal').classList.add('show');
+      } else {
+        startQuiz();
+      }
+    }
+    
+    function startQuiz() {
+      const level = LEVELS[currentLevel];
+      const quiz = level.quiz || [];
+      
+      if (currentQuizIdx < quiz.length) {
+        showQuizStep();
+      } else {
+        finishTeaching();
+      }
+    }
+    
+    function showQuizStep() {
+      const level = LEVELS[currentLevel];
+      const quiz = level.quiz || [];
+      const q = quiz[currentQuizIdx];
+      
+      if (!q) { finishTeaching(); return; }
+      
+      const progress = `📝 小测验 ${currentQuizIdx + 1}/${quiz.length}`;
+      
+      let optionsHtml = q.options.map((opt, i) => 
+        `<button class="quiz-option" onclick="checkAnswer(${i})" style="display:block;width:100%;background:var(--bg-3);border:1px solid var(--bg-4);border-radius:8px;padding:12px;margin:8px 0;text-align:left;color:var(--text-1);cursor:pointer;">
+          <span style="display:inline-block;width:24px;height:24px;background:var(--accent);border-radius:50%;text-align:center;line-height:24px;margin-right:10px;font-weight:600;color:#000;">${'ABC'[i]}</span>
+          ${opt}
+        </button>`
+      ).join('');
+      
+      document.getElementById('modal-title').textContent = progress;
+      document.getElementById('modal-body').innerHTML = `
+        <p style="font-size:15px;margin-bottom:16px;font-weight:600;">${q.question}</p>
+        <div id="quiz-options">${optionsHtml}</div>
+        <div id="quiz-result" style="margin-top:16px;"></div>
+      `;
+      
+      document.getElementById('teaching-modal').classList.add('show');
+    }
+    
+    function checkAnswer(selectedIdx) {
+      const level = LEVELS[currentLevel];
+      const quiz = level.quiz || [];
+      const q = quiz[currentQuizIdx];
+      const correct = selectedIdx === q.answer;
+      
+      // 禁用所有按钮
+      document.querySelectorAll('.quiz-option').forEach((btn, i) => {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        if (i === q.answer) {
+          btn.style.borderColor = 'var(--down)';
+          btn.style.background = 'rgba(34,197,94,0.2)';
+        }
+        if (i === selectedIdx && !correct) {
+          btn.style.borderColor = 'var(--up)';
+          btn.style.background = 'rgba(239,68,68,0.2)';
+        }
+      });
+      
+      const resultEl = document.getElementById('quiz-result');
+      resultEl.innerHTML = `
+        <div style="padding:12px;background:${correct ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};border-radius:8px;border-left:3px solid ${correct ? 'var(--down)' : 'var(--up)'};">
+          <div style="font-weight:600;margin-bottom:8px;">${correct ? '✅ 回答正确！' : '❌ 回答错误'}</div>
+          <div style="font-size:13px;color:var(--text-2);">${q.explanation}</div>
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="nextQuiz()">
+          ${currentQuizIdx < quiz.length - 1 ? '下一题 ▶' : '开始实战 🚀'}
+        </button>
+      `;
+    }
+    
+    function nextQuiz() {
+      currentQuizIdx++;
+      const level = LEVELS[currentLevel];
+      const quiz = level.quiz || [];
+      
+      if (currentQuizIdx < quiz.length) {
+        showQuizStep();
+      } else {
+        finishTeaching();
+      }
+    }
+    
+    function finishTeaching() {
+      document.getElementById('teaching-modal').classList.remove('show');
+      teachingComplete = true;
+      showToast('📖 教学完成，开始交易！', 'success');
+    }
     function showScreen(name) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(name + '-screen').classList.add('active');
