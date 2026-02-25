@@ -1117,14 +1117,33 @@
     
     function analyzeSignals() {
       const signals = [];
-      const data = priceHistory[25 + dayIndex - 1];
+      const dataIdx = 25 + dayIndex - 1;
+      const data = priceHistory[dataIdx];
       if (!data) return;
-      if (data.change > 0.02 && data.volume > 800000) signals.push({ type: 'buy', text: '🔥 放量上涨，资金积极买入' });
-      else if (data.change < -0.02 && data.volume > 800000) signals.push({ type: 'sell', text: '💀 放量下跌，资金出逃' });
-      else if (data.change > 0.01 && data.volume < 400000) signals.push({ type: 'warn', text: '⚠️ 缩量上涨，缺乏动力' });
+      
+      // 计算量比
+      const volMa5 = indicators.volMa5[dataIdx] || 600000;
+      const volRatio = data.volume / volMa5;
+      
+      // 量价关系分析
+      const isUp = data.change >= 0;
+      const isHighVol = volRatio > 1.3;  // 放量
+      const isLowVol = volRatio < 0.7;   // 缩量
+      
+      if (isUp && isHighVol) {
+        signals.push({ type: 'buy', text: '🔥 放量上涨(' + (data.change * 100).toFixed(1) + '%)，量比' + volRatio.toFixed(2) + '，资金积极买入' });
+      } else if (!isUp && isHighVol) {
+        signals.push({ type: 'sell', text: '💀 放量下跌(' + (data.change * 100).toFixed(1) + '%)，量比' + volRatio.toFixed(2) + '，资金出逃' });
+      } else if (isUp && isLowVol) {
+        signals.push({ type: 'warn', text: '⚠️ 缩量上涨(' + (data.change * 100).toFixed(1) + '%)，量比' + volRatio.toFixed(2) + '，缺乏动力' });
+      } else if (!isUp && isLowVol) {
+        signals.push({ type: 'warn', text: '🤔 缩量下跌(' + (data.change * 100).toFixed(1) + '%)，量比' + volRatio.toFixed(2) + '，市场观望' });
+      } else {
+        signals.push({ type: '', text: '📊 量价正常，量比' + volRatio.toFixed(2) + '，观望为主' });
+      }
       
       const list = document.getElementById('signal-list');
-      list.innerHTML = signals.length ? signals.map(s => `<div class="signal-item ${s.type}">${s.text}</div>`).join('') : '<div class="signal-item">暂无明确信号</div>';
+      list.innerHTML = signals.map(s => `<div class="signal-item ${s.type}">${s.text}</div>`).join('');
     }
     
     function endLevel() {
@@ -1164,7 +1183,8 @@
     function updateUI() {
       const level = LEVELS[currentLevel];
       const price = getCurrentPrice();
-      const data = priceHistory[25 + dayIndex - 1];
+      const dataIdx = 25 + dayIndex - 1;
+      const data = priceHistory[dataIdx];
       
       document.getElementById('current-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('current-price').className = 'current-price ' + ((data?.change || 0) >= 0 ? 'up' : 'down');
@@ -1173,7 +1193,11 @@
       changeEl.textContent = ((data?.change || 0) >= 0 ? '+' : '') + ((data?.change || 0) * 100).toFixed(2) + '%';
       changeEl.className = (data?.change || 0) >= 0 ? 'up' : 'down';
       document.getElementById('day-volume').textContent = ((data?.volume || 0) / 10000).toFixed(0) + '万';
-      document.getElementById('vol-ratio').textContent = ((data?.volume || 500000) / 500000).toFixed(1) + 'x';
+      
+      // 量比 = 当日成交量 / 5日均量
+      const volMa5 = indicators.volMa5[dataIdx] || 600000;
+      const volRatio = (data?.volume || 600000) / volMa5;
+      document.getElementById('vol-ratio').textContent = volRatio.toFixed(2) + 'x';
       
       const totalAssets = cash + shares * price;
       const profitRate = (totalAssets - initialCash) / initialCash;
