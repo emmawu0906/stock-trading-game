@@ -358,6 +358,10 @@
         <span class="label">可用资金</span>
         <span class="value" id="buy-cash">¥100,000</span>
       </div>
+      <div class="trade-info-row">
+        <span class="label">最大可买</span>
+        <span class="value" id="buy-max-qty">400股</span>
+      </div>
       <div class="qty-section">
         <div class="qty-label">买入数量（100股起）</div>
         <div class="qty-input-row">
@@ -794,6 +798,9 @@
       // 从开头开始取
       const data = priceHistory.slice(0, visibleCount);
       
+      // 防止空数据
+      if (!data || data.length === 0) return;
+      
       const pad = { left: 4, right: 50, top: 24, bottom: 8 };
       const cw = klineW - pad.left - pad.right;
       const ch = klineH - pad.top - pad.bottom;
@@ -981,19 +988,27 @@
     
     // ===== 交易弹窗 =====
     function showBuyModal() {
-      if (dayIndex === 0) { showToast('请先点击「下一天」', 'error'); return; }
+      if (dayIndex === 0) { 
+        showToast('⚠️ 请先点击「下一天」开始交易', 'error'); 
+        return; 
+      }
       const price = getCurrentPrice();
       document.getElementById('buy-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('buy-cash').textContent = '¥' + cash.toFixed(0);
       const maxQty = Math.floor(cash / (price * 1.001));
-      document.getElementById('buy-max-qty').textContent = Math.floor(maxQty / 100) * 100 + '股';
+      const maxQtyEl = document.getElementById('buy-max-qty');
+      if (maxQtyEl) maxQtyEl.textContent = Math.floor(maxQty / 100) * 100 + '股';
       document.getElementById('buy-shares').value = 100;
       updateTradeSummary('buy');
       document.getElementById('buy-modal').classList.add('show');
+      console.log('Buy modal shown, price:', price, 'dayIndex:', dayIndex);
     }
     
     function showSellModal() {
-      if (dayIndex === 0) { showToast('请先点击「下一天」', 'error'); return; }
+      if (dayIndex === 0) { 
+        showToast('⚠️ 请先点击「下一天」开始交易', 'error'); 
+        return; 
+      }
       const price = getCurrentPrice();
       document.getElementById('sell-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('sell-holding').textContent = shares + '股';
@@ -1001,6 +1016,7 @@
       document.getElementById('sell-shares').value = Math.min(100, shares);
       updateTradeSummary('sell');
       document.getElementById('sell-modal').classList.add('show');
+      console.log('Sell modal shown, price:', price, 'shares:', shares);
     }
     
     function closeTradeModal(type) {
