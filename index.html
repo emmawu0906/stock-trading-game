@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>股民闯关：德明利实战</title>
+  <meta name="description" content="5关教学式A股模拟交易游戏，从K线到MACD系统学习">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+  <!-- ===== SCREEN: Level Select ===== -->
+  <div id="screen-menu" class="screen-menu">
+    <div class="menu-header">
+      <div class="menu-title">📈 股民闯关：德明利实战</div>
+      <div class="menu-subtitle">从零开始，5关系统学习A股交易 · 德明利电子 001309</div>
+    </div>
+    <div class="level-grid" id="level-grid"></div>
+
+    <!-- Capital Selection Modal -->
+    <div id="capital-modal" class="capital-modal hidden">
+      <div class="capital-overlay" id="capital-overlay"></div>
+      <div class="capital-card">
+        <div class="capital-title">💰 选择初始资金</div>
+        <div class="capital-subtitle" id="capital-level-name">第1关：认识市场基础</div>
+        <div class="capital-grid" id="capital-grid"></div>
+        <div class="capital-actions">
+          <button class="btn-nav" id="btn-capital-cancel">取消</button>
+          <button class="btn-nav primary" id="btn-capital-confirm">开始闯关 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: Game ===== -->
+  <div id="screen-game" class="screen-game hidden">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="hdr-left">
+        <button class="btn-back" id="btn-back-menu">◀ 返回</button>
+        <span class="hdr-level" id="level-info-title">第1关</span>
+        <span class="hdr-target" id="level-target-text">目标盈利 5%</span>
+        <span class="hdr-trades" id="trade-limit-text">交易 0/5</span>
+      </div>
+      <div class="hdr-right">
+        <div class="hdr-stat"><span class="lbl">总资产</span><span class="val" id="total-assets">¥100,000</span></div>
+        <div class="hdr-stat"><span class="lbl">收益率</span><span class="val" id="profit-rate">+0.00%</span></div>
+        <div class="hdr-stat"><span class="lbl">可用资金</span><span class="val" id="available-cash">¥100,000</span></div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <div class="game-main">
+      <!-- Left Panel -->
+      <div class="left-panel">
+        <!-- Price Display -->
+        <div class="price-display">
+          <div class="stock-name">德明利 001309</div>
+          <div id="current-price" class="current-price">¥250.00</div>
+          <div class="price-meta">
+            <span>涨跌 <b id="price-change">0.00%</b></span>
+            <span>量 <b id="day-volume">0万</b></span>
+            <span>量比 <b id="volume-ratio">1.0x</b></span>
+          </div>
+        </div>
+        <div id="pattern-desc" class="pattern-desc">点击「下一天」开始</div>
+
+        <!-- Trade Controls -->
+        <div class="trade-section">
+          <div class="trade-row"><label>数量</label><input type="number" id="trade-shares" value="100" step="100"
+              min="100"></div>
+          <div class="qty-btns">
+            <button class="qty-btn" data-qty="100">1手</button>
+            <button class="qty-btn" data-qty="500">5手</button>
+            <button class="qty-btn" data-qty="1000">10手</button>
+          </div>
+          <div class="trade-btns">
+            <button class="btn btn-buy" id="btn-buy">买入</button>
+            <button class="btn btn-sell" id="btn-sell">卖出</button>
+            <button class="btn btn-ghost" id="btn-buy-max">全仓买</button>
+            <button class="btn btn-ghost" id="btn-sell-all">清仓卖</button>
+          </div>
+          <div id="trade-message" class="trade-msg"></div>
+        </div>
+
+        <!-- Position -->
+        <div class="position-section">
+          <div class="pos-row"><span class="lbl">持仓</span><span class="val" id="pos-shares">0 股</span></div>
+          <div class="pos-row"><span class="lbl">成本</span><span class="val" id="pos-cost">--</span></div>
+          <div class="pos-row"><span class="lbl">浮动盈亏</span><span class="val" id="pos-pnl">--</span></div>
+        </div>
+
+        <!-- Signals & Tips -->
+        <div class="scroll-section">
+          <div class="section-title">📡 量价信号</div>
+          <div id="signal-list">
+            <div class="empty-hint">完成教学后开始交易</div>
+          </div>
+          <div class="section-title">💡 本关要点</div>
+          <div id="tips-list"></div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Chart + Feedback -->
+      <div class="right-panel">
+        <div class="chart-area">
+          <canvas id="kline-chart"></canvas>
+          <canvas id="vol-chart"></canvas>
+          <canvas id="macd-chart"></canvas>
+        </div>
+        <div class="info-panel">
+          <div class="feedback-section">
+            <div class="section-title">🎯 操作评价</div>
+            <div id="feedback-list"></div>
+          </div>
+          <div class="tips-section">
+            <div class="section-title">📊 目标进度</div>
+            <div style="padding:8px 12px">
+              <div class="progress-section target-progress">
+                <div class="progress-label"><span>收益进度</span></div>
+                <div class="progress-track">
+                  <div class="progress-fill" id="target-progress-bar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="game-footer">
+      <div class="footer-left">
+        <div class="progress-section" style="min-width:180px">
+          <div class="progress-label"><span id="day-counter">Day 0/5</span><span>交易日进度</span></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="day-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-right">
+        <button class="btn-nav" id="btn-prev-day">◀ 查看历史</button>
+        <button class="btn-nav primary" id="btn-next-day">下一天 ▶</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===== SCREEN: Report ===== -->
+  <div id="screen-report" class="screen-report hidden">
+    <div id="report-content"></div>
+    <div class="report-actions">
+      <button class="btn-nav"
+        onclick="document.getElementById('screen-report').classList.add('hidden');document.getElementById('screen-menu').classList.remove('hidden')">返回关卡</button>
+      <button class="btn-nav primary" id="btn-report-next">下一关 ▶</button>
+    </div>
+  </div>
+
+  <!-- ===== Teaching Modal ===== -->
+  <div id="teaching-modal" class="hidden"></div>
+
+  <script src="levels.js"></script>
+  <script src="signals.js"></script>
+  <script src="trading.js"></script>
+  <script src="feedback.js"></script>
+  <script src="chart.js"></script>
+  <script src="teaching.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
