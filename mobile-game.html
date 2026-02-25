@@ -988,10 +988,6 @@
     
     // ===== 交易弹窗 =====
     function showBuyModal() {
-      if (dayIndex === 0) { 
-        showToast('⚠️ 请先点击「下一天」开始交易', 'error'); 
-        return; 
-      }
       const price = getCurrentPrice();
       document.getElementById('buy-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('buy-cash').textContent = '¥' + cash.toFixed(0);
@@ -1001,14 +997,9 @@
       document.getElementById('buy-shares').value = 100;
       updateTradeSummary('buy');
       document.getElementById('buy-modal').classList.add('show');
-      console.log('Buy modal shown, price:', price, 'dayIndex:', dayIndex);
     }
     
     function showSellModal() {
-      if (dayIndex === 0) { 
-        showToast('⚠️ 请先点击「下一天」开始交易', 'error'); 
-        return; 
-      }
       const price = getCurrentPrice();
       document.getElementById('sell-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('sell-holding').textContent = shares + '股';
@@ -1016,7 +1007,6 @@
       document.getElementById('sell-shares').value = Math.min(100, shares);
       updateTradeSummary('sell');
       document.getElementById('sell-modal').classList.add('show');
-      console.log('Sell modal shown, price:', price, 'shares:', shares);
     }
     
     function closeTradeModal(type) {
