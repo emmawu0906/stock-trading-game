@@ -169,6 +169,24 @@
     .report-stats .stat-label { font-size: 11px; color: var(--text-3); margin-top: 4px; }
     .report-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
     .btn-secondary { background: var(--bg-3); border: 1px solid var(--bg-4); border-radius: 8px; padding: 14px; width: 100%; color: var(--text-1); font-size: 15px; font-weight: 600; cursor: pointer; }
+    
+    /* 资金选择弹窗 */
+    .capital-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; }
+    .capital-modal.show { display: flex; }
+    .capital-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .capital-card { position: relative; z-index: 1; background: var(--bg-2); border: 1px solid var(--bg-4); border-radius: 16px; padding: 24px; max-width: 380px; width: 90%; }
+    .capital-title { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .capital-subtitle { text-align: center; color: var(--text-3); font-size: 13px; margin-bottom: 20px; }
+    .capital-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+    .capital-option { background: var(--bg-3); border: 2px solid var(--bg-4); border-radius: 10px; padding: 10px 2px; text-align: center; cursor: pointer; transition: all .2s; }
+    .capital-option:active { border-color: var(--accent); }
+    .capital-option.selected { border-color: var(--gold); background: rgba(234,179,8,0.1); }
+    .capital-amount { font-size: 16px; font-weight: 800; color: var(--text-1); }
+    .capital-option.selected .capital-amount { color: var(--gold); }
+    .capital-unit { font-size: 10px; color: var(--text-3); }
+    .capital-actions { display: flex; gap: 10px; }
+    .capital-actions .btn-primary { flex: 1; }
+    .capital-actions .btn-secondary { flex: 1; }
   </style>
 </head>
 <body>
@@ -265,6 +283,20 @@
     </div>
   </div>
   
+  <!-- 资金选择弹窗 -->
+  <div id="capital-modal" class="capital-modal">
+    <div class="capital-overlay" onclick="hideCapitalModal()"></div>
+    <div class="capital-card">
+      <div class="capital-title">💰 选择初始资金</div>
+      <div class="capital-subtitle" id="capital-level-name">第1关：认识市场基础</div>
+      <div class="capital-grid" id="capital-grid"></div>
+      <div class="capital-actions">
+        <button class="btn-secondary" onclick="hideCapitalModal()">取消</button>
+        <button class="btn-primary" onclick="confirmCapital()">开始闯关 🚀</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- 结算界面 -->
   <div id="report-screen" class="screen report-screen">
     <div class="safe-top"></div>
@@ -291,6 +323,8 @@
     let shares = 0, avgCost = 0, tradeCount = 0, winCount = 0;
     let priceHistory = [], indicators = {};
     let unlockedLevels = [true, false, false, false, false];
+    let selectedCapital = 100000;  // 默认10万
+    let pendingLevelIndex = null;  // 待开始的关卡索引
     
     // Canvas contexts
     let klineCtx, volCtx, macdCtx;
@@ -321,14 +355,56 @@
     function renderLevelGrid() {
       document.getElementById('completed-levels').textContent = unlockedLevels.filter((v, i) => i > 0 && v).length;
       document.getElementById('level-grid').innerHTML = LEVELS.map((level, i) => `
-        <div class="level-card ${unlockedLevels[i] ? '' : 'locked'} ${unlockedLevels[i+1] ? 'completed' : ''}" onclick="startLevel(${i})">
+        <div class="level-card ${unlockedLevels[i] ? '' : 'locked'} ${unlockedLevels[i+1] ? 'completed' : ''}" onclick="showCapitalModal(${i})">
           <div class="level-header">
             <div class="level-num">${level.id}</div>
             <div class="level-info"><h3>${level.title}</h3><p>${level.subtitle}</p></div>
           </div>
-          <div class="level-meta"><span>${level.days}天</span><span class="level-target">目标+${(level.profit * 100).toFixed(0)}%</span><span>¥${(level.cash/10000).toFixed(0)}万</span></div>
+          <div class="level-meta"><span>${level.days}天</span><span class="level-target">目标+${(level.profit * 100).toFixed(0)}%</span><span>自选资金</span></div>
         </div>
       `).join('');
+    }
+    
+    // ===== 资金选择弹窗 =====
+    function showCapitalModal(levelIndex) {
+      if (!unlockedLevels[levelIndex]) { showToast('🔒 未解锁', 'error'); return; }
+      
+      pendingLevelIndex = levelIndex;
+      const level = LEVELS[levelIndex];
+      document.getElementById('capital-level-name').textContent = `第${level.id}关：${level.title}`;
+      
+      // 渲染资金选项 10万-100万
+      const amounts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+      document.getElementById('capital-grid').innerHTML = amounts.map(amt => {
+        const wan = amt;
+        const actualAmt = amt * 10000;
+        const selected = actualAmt === selectedCapital ? 'selected' : '';
+        return `<div class="capital-option ${selected}" onclick="selectCapital(${actualAmt}, this)">
+          <div class="capital-amount">${wan}</div>
+          <div class="capital-unit">万元</div>
+        </div>`;
+      }).join('');
+      
+      document.getElementById('capital-modal').classList.add('show');
+    }
+    
+    function hideCapitalModal() {
+      document.getElementById('capital-modal').classList.remove('show');
+      pendingLevelIndex = null;
+    }
+    
+    function selectCapital(amt, el) {
+      selectedCapital = amt;
+      document.querySelectorAll('.capital-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    
+    function confirmCapital() {
+      if (pendingLevelIndex !== null) {
+        const levelIndex = pendingLevelIndex;
+        hideCapitalModal();
+        startLevel(levelIndex);
+      }
     }
     
     function startLevel(levelIndex) {
@@ -336,7 +412,9 @@
       
       currentLevel = levelIndex;
       const level = LEVELS[levelIndex];
-      dayIndex = 0; cash = level.cash; initialCash = level.cash;
+      dayIndex = 0; 
+      cash = selectedCapital;  // 使用用户选择的资金
+      initialCash = selectedCapital;
       shares = 0; avgCost = 0; tradeCount = 0; winCount = 0;
       
       generatePriceData(level);
