@@ -616,7 +616,9 @@
     
     function drawCharts() {
       const level = LEVELS[currentLevel];
-      const visibleCount = Math.min(priceHistory.length, 26 + dayIndex);
+      // 历史数据25条 + 交易日(dayIndex从0开始，0表示只显示历史)
+      const historyCount = 25;
+      const visibleCount = Math.min(priceHistory.length, historyCount + dayIndex);
       const startIdx = priceHistory.length - visibleCount;
       const data = priceHistory.slice(startIdx);
       
@@ -672,7 +674,7 @@
         klineCtx.fillStyle = color;
         klineCtx.fillRect(x, bt, candleW, bh);
         
-        // 当日高亮
+        // 当日高亮（tradingDay从1开始，dayIndex也是从1开始表示第1个交易日）
         if (!d.isHistory && d.tradingDay === dayIndex) {
           klineCtx.strokeStyle = 'rgba(96,165,250,0.7)'; klineCtx.lineWidth = 1.5;
           klineCtx.strokeRect(x - 1, toY(d.high) - 2, candleW + 2, toY(d.low) - toY(d.high) + 4);
@@ -846,13 +848,13 @@
     function nextDay() {
       const level = LEVELS[currentLevel];
       dayIndex++;
-      if (dayIndex >= level.days) { endLevel(); return; }
+      if (dayIndex > level.days) { endLevel(); return; }
       updateUI(); analyzeSignals();
     }
     
     function analyzeSignals() {
       const signals = [];
-      const data = priceHistory[25 + dayIndex];
+      const data = priceHistory[25 + dayIndex - 1];
       if (!data) return;
       if (data.change > 0.02 && data.volume > 800000) signals.push({ type: 'buy', text: '🔥 放量上涨，资金积极买入' });
       else if (data.change < -0.02 && data.volume > 800000) signals.push({ type: 'sell', text: '💀 放量下跌，资金出逃' });
@@ -891,14 +893,15 @@
     }
     
     function getCurrentPrice() {
-      const data = priceHistory[25 + dayIndex];
+      // 交易日数据从索引25开始，dayIndex从1开始
+      const data = priceHistory[25 + dayIndex - 1];
       return data ? data.close : priceHistory[priceHistory.length - 1].close;
     }
     
     function updateUI() {
       const level = LEVELS[currentLevel];
       const price = getCurrentPrice();
-      const data = priceHistory[25 + dayIndex];
+      const data = priceHistory[25 + dayIndex - 1];
       
       document.getElementById('current-price').textContent = '¥' + price.toFixed(2);
       document.getElementById('current-price').className = 'current-price ' + ((data?.change || 0) >= 0 ? 'up' : 'down');
@@ -924,7 +927,7 @@
         pnlEl.style.color = pnl >= 0 ? 'var(--up)' : 'var(--down)';
       } else { pnlEl.textContent = '--'; pnlEl.style.color = ''; }
       
-      document.getElementById('day-counter').textContent = `第${dayIndex}天/${level.days}天`;
+      document.getElementById('day-counter').textContent = dayIndex === 0 ? `点击「下一天」开始` : `第${dayIndex}天/${level.days}天`;
       document.getElementById('progress-fill').style.width = (dayIndex / level.days * 100) + '%';
       
       drawCharts();
