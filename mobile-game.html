@@ -520,36 +520,82 @@
       priceHistory = [];
       let price = level.price;
       
-      // 历史数据
+      // 历史数据（25天）
       for (let i = 0; i < 25; i++) {
-        const change = (Math.random() - 0.48) * 0.03;
-        price = price * (1 + change);
+        const prevClose = price;
+        const change = (Math.random() - 0.48) * 0.025;
+        const close = prevClose * (1 + change);
+        
+        // 开盘价：涨跌为正时开盘低于收盘（阳线），涨跌为负时开盘高于收盘（阴线）
+        let open;
+        if (change >= 0) {
+          // 阳线：开盘 < 收盘
+          open = close * (1 - Math.random() * 0.012);
+        } else {
+          // 阴线：开盘 > 收盘
+          open = close * (1 + Math.random() * 0.012);
+        }
+        
+        // 高低点
+        const high = Math.max(open, close) * (1 + Math.random() * 0.008);
+        const low = Math.min(open, close) * (1 - Math.random() * 0.008);
+        
+        // 成交量：涨跌幅度大时放量
+        const baseVol = 500000;
+        const volMultiplier = 1 + Math.abs(change) * 15;
+        const volume = baseVol + Math.random() * baseVol * volMultiplier;
+        
         priceHistory.push({
-          open: price * (1 + (Math.random() - 0.5) * 0.01),
-          high: price * (1 + Math.random() * 0.02),
-          low: price * (1 - Math.random() * 0.02),
-          close: price, volume: 500000 + Math.random() * 500000, change,
+          open, high, low, close, volume,
+          change,
           isHistory: true
         });
+        
+        price = close;
       }
       
-      // 交易日
-      const trends = ['up', 'up', 'down', 'up', 'up', 'down', 'up', 'down', 'up', 'up'];
+      // 交易日数据
+      const trends = ['up', 'up', 'down', 'up', 'up', 'down', 'up', 'down', 'up', 'up', 'up', 'down', 'up', 'up', 'down'];
       let dayPrice = priceHistory[priceHistory.length - 1].close;
       
       for (let d = 0; d < level.days; d++) {
         const trend = trends[d % trends.length];
-        const strength = 0.012 + Math.random() * 0.02;
+        const strength = 0.015 + Math.random() * 0.018;
         let change = trend === 'up' ? strength : -strength;
-        change += (Math.random() - 0.5) * 0.01;
-        dayPrice = dayPrice * (1 + change);
+        
+        const prevClose = dayPrice;
+        const close = prevClose * (1 + change);
+        
+        // 开盘价：确保K线颜色和涨跌一致
+        let open;
+        if (change >= 0) {
+          // 阳线：开盘 < 收盘
+          open = close * (1 - Math.random() * 0.01);
+        } else {
+          // 阴线：开盘 > 收盘
+          open = close * (1 + Math.random() * 0.01);
+        }
+        
+        // 高低点
+        const high = Math.max(open, close) * (1 + Math.random() * 0.006);
+        const low = Math.min(open, close) * (1 - Math.random() * 0.006);
+        
+        // 成交量：放量涨/放量跌时成交量放大，缩量时萎缩
+        const baseVol = 600000;
+        let volMultiplier;
+        if (Math.abs(change) > 0.025) volMultiplier = 1.6;
+        else if (Math.abs(change) > 0.018) volMultiplier = 1.2;
+        else volMultiplier = 0.6; // 缩量
+        const volume = baseVol * volMultiplier + Math.random() * baseVol * 0.5;
+        
         priceHistory.push({
-          open: dayPrice * (1 + (Math.random() - 0.5) * 0.01),
-          high: dayPrice * (1 + Math.random() * 0.015),
-          low: dayPrice * (1 - Math.random() * 0.015),
-          close: dayPrice, volume: 500000 + Math.random() * 1000000 * (Math.abs(change) > 0.02 ? 1.5 : 1),
-          change, isHistory: false, tradingDay: d + 1
+          open, high, low, close, volume,
+          change,
+          isHistory: false,
+          tradingDay: d + 1
         });
+        
+        dayPrice = close;
       }
     }
     
