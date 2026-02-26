@@ -32,6 +32,54 @@
         </div>
       </div>
     </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="capital-modal hidden">
+      <div class="capital-overlay" id="payment-overlay"></div>
+      <div class="capital-card payment-card">
+        <div class="payment-header">
+          <div class="payment-title">💎 解锁完整版</div>
+          <div class="payment-subtitle">一次性买断，永久畅玩全部10关</div>
+        </div>
+        <div class="payment-price">
+          <span class="price-currency">¥</span>
+          <span class="price-amount">9.9</span>
+          <span class="price-original">¥29.9</span>
+        </div>
+        <div class="payment-benefits">
+          <div class="benefit-item">✅ 解锁第2-10关全部内容</div>
+          <div class="benefit-item">✅ 无限次重玩所有关卡</div>
+          <div class="benefit-item">✅ 全部技术指标 (MACD/KDJ)</div>
+          <div class="benefit-item">✅ 后续更新免费享用</div>
+        </div>
+        <div class="payment-qr-section">
+          <div class="payment-qr-label">支付宝扫码支付</div>
+          <div class="payment-qr-box" id="payment-qr-box">
+            <svg viewBox="0 0 200 200" width="180" height="180" xmlns="http://www.w3.org/2000/svg">
+              <rect width="200" height="200" fill="#fff" />
+              <text x="100" y="90" text-anchor="middle" font-size="14" fill="#333">请替换为</text>
+              <text x="100" y="110" text-anchor="middle" font-size="14" fill="#333">支付宝收款码</text>
+              <rect x="20" y="20" width="40" height="40" rx="4" fill="#1677ff" opacity="0.2" />
+              <rect x="140" y="20" width="40" height="40" rx="4" fill="#1677ff" opacity="0.2" />
+              <rect x="20" y="140" width="40" height="40" rx="4" fill="#1677ff" opacity="0.2" />
+              <rect x="70" y="70" width="60" height="60" rx="4" fill="#1677ff" opacity="0.15" />
+            </svg>
+          </div>
+          <div class="payment-qr-hint">打开支付宝 → 扫一扫 → 支付 ¥9.9</div>
+        </div>
+        <div class="payment-verify">
+          <label class="payment-verify-label">支付完成后，输入支付宝订单号后4位：</label>
+          <div class="payment-verify-row">
+            <input type="text" id="payment-order-code" class="payment-code-input" maxlength="4" placeholder="如: 8520">
+            <button class="btn-nav primary" id="btn-payment-verify">确认已支付</button>
+          </div>
+        </div>
+        <div class="payment-actions">
+          <button class="btn-nav" id="btn-payment-cancel">暂不购买</button>
+          <div class="payment-disclaimer">购买即表示同意 · 虚拟商品不退款</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== SCREEN: Game ===== -->

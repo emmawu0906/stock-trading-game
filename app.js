@@ -16,7 +16,56 @@ class GameApp {
         this.gameOver = false;
         this.selectedCapital = 100000; // 默认10万
         this.pendingLevelId = null;
+        this.paid = this.isPaid();
         this.init();
+    }
+
+    // ========== Payment ==========
+    isPaid() {
+        try {
+            const data = localStorage.getItem('stock_game_paid');
+            if (data) {
+                const parsed = JSON.parse(data);
+                return parsed.paid === true;
+            }
+        } catch (e) { }
+        return false;
+    }
+
+    needPayment(levelId) {
+        return levelId >= 2 && !this.paid;
+    }
+
+    showPaymentModal(levelId) {
+        this.pendingLevelId = levelId;
+        document.getElementById('payment-modal').classList.remove('hidden');
+        document.getElementById('payment-order-code').value = '';
+    }
+
+    hidePaymentModal() {
+        document.getElementById('payment-modal').classList.add('hidden');
+    }
+
+    verifyPayment() {
+        const code = document.getElementById('payment-order-code').value.trim();
+        if (code.length !== 4 || !/^\d{4}$/.test(code)) {
+            alert('请输入支付宝订单号后4位数字');
+            return;
+        }
+        // Save payment status
+        localStorage.setItem('stock_game_paid', JSON.stringify({
+            paid: true,
+            code: code,
+            time: new Date().toISOString()
+        }));
+        this.paid = true;
+        this.hidePaymentModal();
+        alert('🎉 支付成功！已解锁全部关卡');
+        this.renderLevelGrid();
+        // Auto-open capital modal for the level they wanted
+        if (this.pendingLevelId && this.unlockedLevels.includes(this.pendingLevelId)) {
+            this.showCapitalModal(this.pendingLevelId);
+        }
     }
 
     init() {
@@ -32,10 +81,18 @@ class GameApp {
             const cls = unlocked ? 'unlocked' : 'locked';
             const modeIcons = { observe: '👁️', coach: '🤝', trade: '📈' };
             const badgeIcon = unlocked ? (cfg.badge ? cfg.badge.slice(0, 2) : modeIcons[cfg.mode] || '📈') : '🔒';
-            const targetText = cfg.mode === 'observe' ? '🎯 预测准确率60%+' : `🎯 盈利目标 ${(cfg.targetProfit * 100).toFixed(0)}%`;
-            const metaText = cfg.mode === 'observe' ? `${cfg.tradingDays}天观察 · 纯预测` : `${cfg.tradingDays}个交易日 · ${cfg.maxTrades > 100 ? '无限' : cfg.maxTrades}次交易`;
+            const targetText = `🎯 盈利目标 ${(cfg.targetProfit * 100).toFixed(0)}%`;
+            const metaText = `${cfg.tradingDays}个交易日 · ${cfg.maxTrades > 100 ? '无限' : cfg.maxTrades}次交易`;
+            // Payment badge
+            let payBadge = '';
+            if (cfg.id >= 2) {
+                payBadge = this.paid ? '<div class="paid-badge">VIP</div>' : '<div class="lock-badge">💎 付费</div>';
+            } else {
+                payBadge = '<div class="paid-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a)">免费</div>';
+            }
             return `
         <div class="level-card ${cls}" data-level="${cfg.id}">
+          ${payBadge}
           <div class="level-badge">${badgeIcon}</div>
           <div class="level-number">${cfg.id}</div>
           <div class="level-title">${cfg.title}</div>
@@ -46,7 +103,14 @@ class GameApp {
         }).join('');
 
         grid.querySelectorAll('.level-card.unlocked').forEach(card => {
-            card.addEventListener('click', () => this.showCapitalModal(parseInt(card.dataset.level)));
+            const levelId = parseInt(card.dataset.level);
+            card.addEventListener('click', () => {
+                if (this.needPayment(levelId)) {
+                    this.showPaymentModal(levelId);
+                } else {
+                    this.showCapitalModal(levelId);
+                }
+            });
         });
     }
 
@@ -164,6 +228,11 @@ class GameApp {
 
     // ========== Events ==========
     bindEvents() {
+        // Payment modal
+        document.getElementById('btn-payment-cancel').addEventListener('click', () => this.hidePaymentModal());
+        document.getElementById('payment-overlay').addEventListener('click', () => this.hidePaymentModal());
+        document.getElementById('btn-payment-verify').addEventListener('click', () => this.verifyPayment());
+
         // Capital modal
         document.getElementById('btn-capital-cancel').addEventListener('click', () => this.hideCapitalModal());
         document.getElementById('capital-overlay').addEventListener('click', () => this.hideCapitalModal());
