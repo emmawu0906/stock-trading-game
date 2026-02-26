@@ -30,14 +30,18 @@ class GameApp {
         grid.innerHTML = LEVEL_CONFIGS.map(cfg => {
             const unlocked = this.unlockedLevels.includes(cfg.id);
             const cls = unlocked ? 'unlocked' : 'locked';
+            const modeIcons = { observe: '👁️', coach: '🤝', trade: '📈' };
+            const badgeIcon = unlocked ? (cfg.badge ? cfg.badge.slice(0, 2) : modeIcons[cfg.mode] || '📈') : '🔒';
+            const targetText = cfg.mode === 'observe' ? '🎯 预测准确率60%+' : `🎯 盈利目标 ${(cfg.targetProfit * 100).toFixed(0)}%`;
+            const metaText = cfg.mode === 'observe' ? `${cfg.tradingDays}天观察 · 纯预测` : `${cfg.tradingDays}个交易日 · ${cfg.maxTrades > 100 ? '无限' : cfg.maxTrades}次交易`;
             return `
         <div class="level-card ${cls}" data-level="${cfg.id}">
-          <div class="level-badge">${unlocked ? (cfg.id <= 3 ? '📚' : '🏆') : '🔒'}</div>
+          <div class="level-badge">${badgeIcon}</div>
           <div class="level-number">${cfg.id}</div>
           <div class="level-title">${cfg.title}</div>
           <div class="level-subtitle">${cfg.subtitle}</div>
-          <div class="level-target">🎯 盈利目标 ${(cfg.targetProfit * 100).toFixed(0)}%</div>
-          <div class="level-meta">${cfg.tradingDays}个交易日 · ${cfg.maxTrades > 100 ? '无限' : cfg.maxTrades}次交易</div>
+          <div class="level-target">${targetText}</div>
+          <div class="level-meta">${metaText}</div>
         </div>`;
         }).join('');
 
@@ -101,7 +105,15 @@ class GameApp {
 
         // Header
         document.getElementById('level-info-title').textContent = `第${levelId}关：${this.levelConfig.title}`;
-        document.getElementById('level-target-text').textContent = `目标 +${(this.levelConfig.targetProfit * 100).toFixed(0)}%`;
+        const targetText = this.levelConfig.mode === 'observe' ? '目标：预测准确率60%+' : `目标 +${(this.levelConfig.targetProfit * 100).toFixed(0)}%`;
+        document.getElementById('level-target-text').textContent = targetText;
+
+        // Observation mode: hide trade controls, show prediction buttons
+        this.isObserveMode = this.levelConfig.mode === 'observe';
+        this.isCoachMode = this.levelConfig.mode === 'coach';
+        this.predictions = { correct: 0, total: 0 };
+        const tradeSection = document.querySelector('.trade-section');
+        if (tradeSection) tradeSection.style.display = this.isObserveMode ? 'none' : '';
 
         // Tips
         const tipsList = document.getElementById('tips-list');
@@ -134,9 +146,11 @@ class GameApp {
     }
 
     onTeachingComplete() {
-        // Re-enable trade buttons
-        this.setTradeEnabled(true);
-        // Auto-advance to first trading day so user can immediately trade
+        // Observe mode: keep trade disabled
+        if (!this.isObserveMode) {
+            this.setTradeEnabled(true);
+        }
+        // Auto-advance to first trading day
         this.nextDay();
     }
 
@@ -210,6 +224,16 @@ class GameApp {
         // Day progress
         document.getElementById('day-counter').textContent = `Day ${this.currentTradingDay + 1}/${totalDays}`;
         document.getElementById('day-progress-bar').style.width = `${((this.currentTradingDay + 1) / totalDays) * 100}%`;
+
+        // Observe mode: show prediction prompt
+        if (this.isObserveMode && this.currentTradingDay < totalDays - 1) {
+            this.showPredictionPrompt(dayData);
+        }
+
+        // Coach mode: show coach messages
+        if (this.isCoachMode && this.levelConfig.coachScript) {
+            this.showCoachMessage(dayData);
+        }
     }
 
     prevDay() {
@@ -281,13 +305,13 @@ class GameApp {
         this.gameOver = true;
         const dayData = this.priceGen.getTradingDayData(Math.max(0, this.currentTradingDay));
         const price = dayData ? dayData.close : this.levelConfig.initialPrice;
-        const report = this.feedback.generateReport(this.levelConfig, this.trading, price);
+        const report = this.feedback.generateReport(this.levelConfig, this.trading, price, this.predictions);
 
         this.feedback.newAchievements = [];
         this.feedback.checkLevelClear(this.levelConfig.id, report.profitRate);
         this.feedback.newAchievements.forEach(a => this.showAchievement(a));
 
-        if (report.passed && !this.unlockedLevels.includes(this.levelConfig.id + 1) && this.levelConfig.id < 5) {
+        if (report.passed && !this.unlockedLevels.includes(this.levelConfig.id + 1) && this.levelConfig.id < 10) {
             this.unlockedLevels.push(this.levelConfig.id + 1);
         }
         this.feedback.saveProgress(this.unlockedLevels);
@@ -329,11 +353,11 @@ class GameApp {
         const nextBtn = document.getElementById('btn-report-next');
         // Reset onclick to default handler
         nextBtn.onclick = null;
-        if (report.passed && this.levelConfig.id < 5) {
+        if (report.passed && this.levelConfig.id < 10) {
             nextBtn.style.display = 'inline-flex';
             nextBtn.textContent = `第${this.levelConfig.id + 1}关 ▶`;
             nextBtn.onclick = () => this.nextLevel();
-        } else if (this.levelConfig.id >= 5 && report.passed) {
+        } else if (this.levelConfig.id >= 10 && report.passed) {
             nextBtn.style.display = 'inline-flex';
             nextBtn.textContent = '🎓 全部通关！返回主页';
             nextBtn.onclick = () => this.backToMenu();
@@ -347,7 +371,7 @@ class GameApp {
     nextLevel() {
         const nextId = this.levelConfig.id + 1;
         document.getElementById('screen-report').classList.add('hidden');
-        if (nextId <= 5 && this.unlockedLevels.includes(nextId)) {
+        if (nextId <= 10 && this.unlockedLevels.includes(nextId)) {
             this.startLevel(nextId);
         } else {
             this.startLevel(this.levelConfig.id); // retry
@@ -445,6 +469,89 @@ class GameApp {
         const visibleData = this.priceGen.getVisibleData(this.currentTradingDay);
         const absIdx = this.priceGen.tradingStartIndex + this.currentTradingDay;
         this.chart.draw(visibleData, absIdx, this.indicators, this.levelConfig.unlockFeatures);
+    }
+
+    // ========== Observe Mode: Prediction ==========
+    showPredictionPrompt(dayData) {
+        const nextDay = this.priceGen.getTradingDayData(this.currentTradingDay + 1);
+        if (!nextDay) return;
+
+        const modal = document.getElementById('teaching-modal');
+        modal.className = 'teaching-overlay';
+        modal.innerHTML = `
+        <div class="teaching-card" style="max-width:420px">
+            <div class="teaching-step-header">🔮 预测明天走势</div>
+            <div class="teaching-body" style="padding:16px 20px">
+                <p>今日收盘 <b>¥${dayData.close.toFixed(2)}</b>（${dayData.change >= 0 ? '+' : ''}${(dayData.change * 100).toFixed(2)}%）</p>
+                <p style="margin:8px 0;font-size:14px;color:#9ca3af">${dayData.patternDesc}</p>
+                <p style="margin:12px 0"><b>你认为明天股价会？</b></p>
+                <div style="display:flex;gap:12px;margin-top:16px">
+                    <button class="btn btn-buy" style="flex:1;padding:12px" onclick="window._gameApp.handlePrediction('up')">📈 上涨</button>
+                    <button class="btn btn-sell" style="flex:1;padding:12px" onclick="window._gameApp.handlePrediction('down')">📉 下跌</button>
+                </div>
+                <p style="margin-top:12px;text-align:center;font-size:13px;color:#6b7280">预测进度：${this.predictions.total}/${this.levelConfig.tradingDays - 1}，正确 ${this.predictions.correct} 次</p>
+            </div>
+        </div>`;
+        window._gameApp = this;
+    }
+
+    handlePrediction(direction) {
+        const nextDay = this.priceGen.getTradingDayData(this.currentTradingDay + 1);
+        if (!nextDay) return;
+        const actual = nextDay.change >= 0 ? 'up' : 'down';
+        const correct = direction === actual;
+        this.predictions.total++;
+        if (correct) this.predictions.correct++;
+
+        const modal = document.getElementById('teaching-modal');
+        const resultEmoji = correct ? '✅' : '❌';
+        const resultText = correct ? '预测正确！' : '预测错误';
+        modal.innerHTML = `
+        <div class="teaching-card" style="max-width:420px">
+            <div class="teaching-step-header">${resultEmoji} ${resultText}</div>
+            <div class="teaching-body" style="padding:16px 20px">
+                <p>明天实际${actual === 'up' ? '📈 上涨' : '📉 下跌'} ${(Math.abs(nextDay.change) * 100).toFixed(2)}%</p>
+                <p style="margin:8px 0;font-size:13px;color:#9ca3af">${nextDay.patternDesc}</p>
+                <p style="margin-top:12px">当前准确率：<b>${this.predictions.total > 0 ? ((this.predictions.correct / this.predictions.total) * 100).toFixed(0) : 0}%</b>（${this.predictions.correct}/${this.predictions.total}）</p>
+                <button class="btn-nav primary" style="width:100%;margin-top:16px;padding:12px" onclick="document.getElementById('teaching-modal').className='hidden'">继续观察 →</button>
+            </div>
+        </div>`;
+    }
+
+    // ========== Coach Mode: Guided Messages ==========
+    showCoachMessage(dayData) {
+        const scripts = this.levelConfig.coachScript;
+        if (!scripts) return;
+        const day = this.currentTradingDay + 1;
+        const matchingScripts = scripts.filter(s => s.triggerDay === day);
+        if (matchingScripts.length === 0) return;
+
+        for (const script of matchingScripts) {
+            let show = false;
+            switch (script.triggerCondition) {
+                case 'always': show = true; break;
+                case 'price_up': show = dayData.change > 0; break;
+                case 'holding': show = this.trading.shares > 0; break;
+                case 'no_position': show = this.trading.shares === 0; break;
+            }
+            if (!show) continue;
+
+            const msg = script.message.replace(/\n/g, '<br>');
+            const feedbackList = document.getElementById('feedback-list');
+            feedbackList.insertAdjacentHTML('afterbegin', `
+                <div class="score-card grade-A" style="border-left:3px solid #3b82f6">
+                    <div class="score-header"><span class="score-grade" style="background:#3b82f6">🤝</span><span class="score-value">教练提示</span></div>
+                    <div class="fb-item fb-good" style="font-size:14px;line-height:1.6">${msg}</div>
+                </div>`);
+
+            if (script.action === 'suggest_buy') {
+                this.showTradeMsg(`💡 教练建议：买入${script.suggestShares || 100}股`, 'success');
+                document.getElementById('trade-shares').value = script.suggestShares || 100;
+            } else if (script.action === 'suggest_sell') {
+                this.showTradeMsg('💡 教练建议：卖出持仓', 'success');
+            }
+            break; // show only first matching script per day
+        }
     }
 }
 
