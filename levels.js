@@ -9,9 +9,9 @@ const LEVEL_CONFIGS = [
         id: 1,
         title: '认识市场',
         subtitle: '学会"看"K线',
-        mode: 'observe', // 纯观察模式
+        mode: 'trade',
         targetProfit: 0,
-        maxTrades: 0,
+        maxTrades: 6,
         tradingDays: 10,
         initialPrice: 250,
         initialCash: 100000,
