@@ -334,6 +334,14 @@ class GameApp {
             return `<div class="trade-record ${cls}"><span>${label} ${t.qty}股 @ ¥${t.price.toFixed(2)}</span>${scoreHTML}</div>`;
         }).join('');
 
+        // Observe mode: show prediction stats instead of profit
+        const isObs = report.isObserveMode;
+        const mainStatLabel = isObs ? '预测准确率' : '收益率';
+        const mainStatValue = isObs ? `${(report.profitRate * 100).toFixed(0)}%` : `${profitPct}%`;
+        const targetLabel = isObs ? '目标准确率' : '目标';
+        const targetValue = isObs ? `${(report.targetProfit * 100).toFixed(0)}%` : `+${(report.targetProfit * 100).toFixed(0)}%`;
+        const predInfo = isObs && report.predictions ? `<div class="stat-row"><span>预测次数</span><span>${report.predictions.correct}/${report.predictions.total}</span></div>` : '';
+
         document.getElementById('report-content').innerHTML = `
       <div class="report-header ${cls}">
         <div class="report-stars">${starsStr}</div>
@@ -341,13 +349,13 @@ class GameApp {
         <div class="report-level">第${report.levelId}关 · ${report.title}</div>
       </div>
       <div class="report-stats">
-        <div class="stat-row"><span>收益率</span><span class="${report.profitRate >= 0 ? 'up' : 'down'}">${profitPct}%</span></div>
-        <div class="stat-row"><span>目标</span><span>+${(report.targetProfit * 100).toFixed(0)}%</span></div>
-        <div class="stat-row"><span>总资产</span><span>¥${report.totalAssets.toFixed(0)}</span></div>
-        <div class="stat-row"><span>交易次数</span><span>${report.tradeCount}</span></div>
-        <div class="stat-row"><span>平均评分</span><span>${report.avgScore}</span></div>
+        <div class="stat-row"><span>${mainStatLabel}</span><span class="${report.profitRate >= 0 ? 'up' : 'down'}">${mainStatValue}</span></div>
+        <div class="stat-row"><span>${targetLabel}</span><span>${targetValue}</span></div>
+        ${isObs ? predInfo : `<div class="stat-row"><span>总资产</span><span>¥${report.totalAssets.toFixed(0)}</span></div>`}
+        ${isObs ? '' : `<div class="stat-row"><span>交易次数</span><span>${report.tradeCount}</span></div>`}
+        ${isObs ? '' : `<div class="stat-row"><span>平均评分</span><span>${report.avgScore}</span></div>`}
       </div>
-      <div class="report-trades"><h3>📋 交易记录</h3>${tradesHTML || '<div class="empty-hint">未进行交易</div>'}</div>
+      <div class="report-trades"><h3>${isObs ? '📋 预测总结' : '📋 交易记录'}</h3>${tradesHTML || (isObs ? '<div class="empty-hint">观察模式无交易记录</div>' : '<div class="empty-hint">未进行交易</div>')}</div>
     `;
 
         const nextBtn = document.getElementById('btn-report-next');

@@ -84,10 +84,10 @@ class FeedbackSystem {
             if (data) {
                 const saved = JSON.parse(data);
                 if (saved.achievements) saved.achievements.forEach(a => { const f = this.achievements.find(x => x.id === a.id); if (f) f.unlocked = a.unlocked; });
-                return saved.unlockedLevels || [1];
+                return saved.unlockedLevels || [1, 2];
             }
         } catch (e) { }
-        return [1];
+        return [1, 2];
     }
 
     saveProgress(unlockedLevels) {
